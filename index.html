@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Overall</title>
+    <style>
+        /* Estilos CSS para a interface */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+        .calculator-container {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 350px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result-display {
+            margin-top: 25px;
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #28a745; /* Verde para destaque */
+            border: 2px solid #28a745;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #e9f5e9;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator-container">
+    <h1>Calculadora de Overall</h1>
+    
+    <div class="form-group">
+        <label for="posicao">Posição</label>
+        <select id="posicao">
+            <option value="ATA">Ataque (ATA, PE, PD)</option>
+            <option value="MEI">Meio-Campo (MEI, MC, ME, MD)</option>
+            <option value="DEF">Defesa (ZAG, LD, LE, VOL)</option>
+            <option value="GK">Goleiro (GK)</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="atk">Ataque (ATK)</label>
+        <input type="number" id="atk" min="1" max="99" value="75">
+    </div>
+    
+    <div class="form-group">
+        <label for="mei">Meio-Campo (MEI)</label>
+        <input type="number" id="mei" min="1" max="99" value="75">
+    </div>
+    
+    <div class="form-group">
+        <label for="def">Defesa (DEF)</label>
+        <input type="number" id="def" min="1" max="99" value="75">
+    </div>
+    
+    <button id="calculate-btn">Calcular Overall</button>
+    
+    <div id="result-display">--</div>
+</div>
+
+<script>
+    // A lógica de cálculo em JavaScript
+    document.addEventListener('DOMContentLoaded', () => {
+        const calculateBtn = document.getElementById('calculate-btn');
+        const posicaoSelect = document.getElementById('posicao');
+        const atkInput = document.getElementById('atk');
+        const meiInput = document.getElementById('mei');
+        const defInput = document.getElementById('def');
+        const resultDisplay = document.getElementById('result-display');
+
+        // Mapeia o valor do select para as posições reais
+        const positionGroups = {
+            'DEF': ['ZAG', 'LD', 'LE', 'VOL'],
+            'MEI': ['MC', 'ME', 'MD', 'MEI'],
+            'ATA': ['MEI', 'PE', 'PD', 'ATA'],
+            'GK': ['GK']
+        };
+
+        function calcularOverallIndividualJS(player) {
+            if (!player || !player.posicao) return 0;
+
+            if (player.posicao.includes('GK')) {
+                const weightedSum = (player.def * 8) + (player.mei * 1) + (player.atk * 1);
+                return Math.round(weightedSum / 10);
+            }
+
+            let playerType = null;
+            if (player.posicao.some(pos => positionGroups.ATA.includes(pos))) playerType = 'ATA';
+            else if (player.posicao.some(pos => positionGroups.MEI.includes(pos))) playerType = 'MEI';
+            else if (player.posicao.some(pos => positionGroups.DEF.includes(pos))) playerType = 'DEF';
+
+            let weightedSum = 0;
+            let totalWeight = 1;
+
+            if (playerType === 'ATA') {
+                weightedSum = (player.atk * 3) + (player.mei * 2) + (player.def * 1);
+                totalWeight = 6;
+            } else if (playerType === 'MEI') {
+                weightedSum = (player.mei * 3) + (player.atk * 2) + (player.def * 2);
+                totalWeight = 7;
+            } else if (playerType === 'DEF') {
+                weightedSum = (player.def * 3) + (player.mei * 2) + (player.atk * 1);
+                totalWeight = 6;
+            } else {
+                return Math.round((player.atk + player.mei + player.def) / 3);
+            }
+            
+            return Math.round(weightedSum / totalWeight);
+        }
+
+        calculateBtn.addEventListener('click', () => {
+            const selectedPosition = posicaoSelect.value;
+            const atkValue = parseInt(atkInput.value);
+            const meiValue = parseInt(meiInput.value);
+            const defValue = parseInt(defInput.value);
+
+            // Validação simples
+            if (isNaN(atkValue) || isNaN(meiValue) || isNaN(defValue)) {
+                alert("Por favor, insira valores válidos para todos os atributos.");
+                return;
+            }
+
+            const player = {
+                atk: atkValue,
+                mei: meiValue,
+                def: defValue,
+                posicao: positionGroups[selectedPosition]
+            };
+
+            const overall = calcularOverallIndividualJS(player);
+            resultDisplay.textContent = overall;
+        });
+    });
+</script>
+
+</body>
+</html>
